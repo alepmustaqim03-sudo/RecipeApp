@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import seed from "../data/seedRecipes.json";
 import { Recipe } from "../type";
 
