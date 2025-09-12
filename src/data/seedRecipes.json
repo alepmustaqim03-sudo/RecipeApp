@@ -3,7 +3,7 @@
     "id": "seed-1",
     "name": "Classic Pancakes",
     "type": "Breakfast",
-    "imageUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fpancake&psig=AOvVaw1YuKw6DIqc_khe6lIadn4Q&ust=1757771243365000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiNiqSu048DFQAAAAAdAAAAABAE",
+    "imageUrl": "https://media.istockphoto.com/id/161170090/photo/pancakes-with-berries-and-maple-syrup.jpg?s=1024x1024&w=is&k=20&c=Vwpm59WrkyI4IsK8ISynaIzKiHrwWebnGgYGoR6CewI=",
     "ingredients": [
       {"id":"i1","text":"1 cup flour"},
       {"id":"i2","text":"1 cup milk"},

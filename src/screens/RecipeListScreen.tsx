@@ -33,15 +33,20 @@ export default function RecipeListScreen() {
   return (
     <View style={s.container}>
       <Text style={s.title}>Recipes</Text>
-
-      {/* type filter */}
-      <FlatList
+      <View>
+        <FlatList
         horizontal
         data={["ALL", ...types]}
         keyExtractor={(k)=>String(k)}
         showsHorizontalScrollIndicator={false}
-        style={{marginVertical:12}}
-        contentContainerStyle={{gap:8, paddingHorizontal:12}}
+        style={{ marginVertical: 12,height: 44}}
+        contentContainerStyle={{
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        height:44,
+        justifyContent:"center",
+      }}
+        ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
         renderItem={({item}) => (
           <TouchableOpacity onPress={()=>setSelected(item as any)} style={[s.chip, selected===item && s.chipActive]}>
             <Text style={[s.chipText, selected===item && {color:"#06110a"}]}>{item}</Text>
@@ -49,12 +54,13 @@ export default function RecipeListScreen() {
         )}
       />
 
+      </View>
       {/* list */}
       <FlatList
         data={filtered}
         keyExtractor={(x)=>x.id}
         ItemSeparatorComponent={()=><View style={{height:10}} />}
-        contentContainerStyle={{padding:12, paddingBottom:24}}
+        contentContainerStyle={{padding:12, paddingBottom:24,flex:1}}
         renderItem={({item})=>(
           <RecipeCard item={item} onPress={()=>nav.navigate("Detail",{id:item.id})}/>
         )}
@@ -70,11 +76,45 @@ export default function RecipeListScreen() {
 }
 
 const s = StyleSheet.create({
-  container:{ flex:1, backgroundColor:colors.bg },
-  title:{ color:colors.text, fontSize:24, fontWeight:"700", paddingHorizontal:12, paddingTop:12 },
-  chip:{ paddingVertical:8, paddingHorizontal:12, borderRadius:999, borderWidth:1, borderColor:colors.border, backgroundColor:colors.card },
-  chipActive:{ backgroundColor:colors.primary, borderColor:colors.primary },
-  chipText:{ color:colors.text, fontWeight:"600" },
-  empty:{ color:colors.sub, textAlign:"center", marginTop:40 },
-  fab:{ position:"absolute", right:18, bottom:22, backgroundColor:colors.primary, paddingVertical:12, paddingHorizontal:18, borderRadius:999, elevation:4 }
+  container:{ flex:1,
+     backgroundColor:colors.bg 
+    },
+  title:{ 
+    color:colors.text, 
+    fontSize:24,
+    fontWeight:"700", 
+    paddingHorizontal:12, 
+    paddingTop:12 
+  },
+  chip:{ 
+    paddingVertical:8, 
+    paddingHorizontal:12, 
+    borderRadius:999, 
+    borderWidth:1, 
+    borderColor:colors.border, 
+    backgroundColor:colors.card 
+  },
+  chipActive:{ 
+    backgroundColor:colors.primary, 
+    borderColor:colors.primary 
+  },
+  chipText:{ 
+    color:colors.text, 
+    fontWeight:"600" 
+  },
+  empty:{ 
+    color:colors.sub, 
+    textAlign:"center", 
+    marginTop:40 
+  },
+  fab:{ 
+    position:"absolute", 
+    right:18, 
+    bottom:22, 
+    backgroundColor:colors.primary, 
+    paddingVertical:12, 
+    paddingHorizontal:18, 
+    borderRadius:999, 
+    elevation:4 
+  }
 });
