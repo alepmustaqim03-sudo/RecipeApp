@@ -1,0 +1,22 @@
+[
+  {
+    "id": "seed-1",
+    "name": "Classic Pancakes",
+    "type": "Breakfast",
+    "imageUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fpancake&psig=AOvVaw1YuKw6DIqc_khe6lIadn4Q&ust=1757771243365000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiNiqSu048DFQAAAAAdAAAAABAE",
+    "ingredients": [
+      {"id":"i1","text":"1 cup flour"},
+      {"id":"i2","text":"1 cup milk"},
+      {"id":"i3","text":"1 egg"},
+      {"id":"i4","text":"1 tbsp sugar"},
+      {"id":"i5","text":"1 tsp baking powder"}
+    ],
+    "steps": [
+      {"id":"s1","text":"Whisk dry ingredients."},
+      {"id":"s2","text":"Add milk & egg; whisk smooth."},
+      {"id":"s3","text":"Cook on greased pan 2–3 min/side."}
+    ],
+    "createdAt": 0,
+    "updatedAt": 0
+  }
+]
