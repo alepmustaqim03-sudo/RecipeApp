@@ -6,7 +6,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import types from "../data/recipeTypes.json";
 import { add, get, update } from "../storage/recipeStore";
-import { Ingredient, Recipe, Step } from "../type";
+import { Ingredient, Recipe, Step } from "../type"; // <-- ensure this path
 import { colors } from "../theme";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
@@ -37,6 +37,7 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
   // leave-guard
   const initialSnapshotRef = useRef<string>("");
   const pendingNavActionRef = useRef<any>(null);
+  const isSavingRef = useRef(false);
 
   // load data
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
           });
         }
       } else {
+        // pristine defaults for Add mode
         initialSnapshotRef.current = JSON.stringify({
           name: "",
           type: types[0],
@@ -120,32 +122,25 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
 
   const removeImage = () => setImageUrl("");
 
-  // --- dirty check ---
-  const cleaned = (arr: { text: string }[]) => arr.map(x => (x.text || "").trim()).filter(Boolean);
+  // --- dirty check (unified) ---
+  const normalized = useMemo(() => ({
+    name: name.trim(),
+    type,
+    imageUrl: imageUrl.trim(),
+    ingredients: ingredients.map(i => ({ text: (i.text || "").trim() })),
+    steps: steps.map(s => ({ text: (s.text || "").trim() })),
+  }), [name, type, imageUrl, ingredients, steps]);
 
-  const isDirty = useMemo(() => {
-    const currentNormalized = {
-      name: name.trim(),
-      type,
-      imageUrl: imageUrl.trim(),
-      ingredients: ingredients.map(i => ({ text: (i.text || "").trim() })),
-      steps: steps.map(s => ({ text: (s.text || "").trim() })),
-    };
-    if (editingId) {
-      return JSON.stringify(currentNormalized) !== initialSnapshotRef.current;
-    }
-    const hasName = currentNormalized.name.length > 0;
-    const hasImage = currentNormalized.imageUrl.length > 0;
-    const hasTypeChange = currentNormalized.type !== types[0];
-    const hasIngredients = cleaned(currentNormalized.ingredients).length > 0;
-    const hasSteps = cleaned(currentNormalized.steps).length > 0;
-    return hasName || hasImage || hasTypeChange || hasIngredients || hasSteps;
-  }, [editingId, name, type, imageUrl, ingredients, steps]);
+  const isDirty = useMemo(
+    () => JSON.stringify(normalized) !== initialSnapshotRef.current,
+    [normalized]
+  );
 
   // --- intercept leaving ---
   useEffect(() => {
     const unsub = navigation.addListener("beforeRemove", (e: any) => {
-      if (!isDirty) return;
+      // allow if not dirty or we're programmatically navigating after a save
+      if (!isDirty || isSavingRef.current) return;
       e.preventDefault();
       pendingNavActionRef.current = e.data.action;
       setShowDiscardSheet(true);
@@ -168,28 +163,33 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
   const submit = async () => {
     if (!name.trim()) return;
     const payload = {
-      name: name.trim(),
-      type,
-      imageUrl: imageUrl.trim() || undefined,
-      ingredients: ingredients.filter(i => i.text.trim().length > 0),
-      steps: steps.filter(s => s.text.trim().length > 0),
+      name: normalized.name,
+      type: normalized.type,
+      imageUrl: normalized.imageUrl || undefined,
+      ingredients: normalized.ingredients.filter(i => i.text.length > 0),
+      steps: normalized.steps.filter(s => s.text.length > 0),
     };
 
-    if (editingId) {
-      await update(editingId, payload as Partial<Recipe>);
+    isSavingRef.current = true;
+    try {
+      if (editingId) {
+        await update(editingId, payload as Partial<Recipe>);
+      } else {
+        await add(payload as any);
+      }
+      // refresh snapshot so guard sees no changes
       initialSnapshotRef.current = JSON.stringify({
-        name: payload.name,
-        type: payload.type,
+        ...payload,
         imageUrl: payload.imageUrl ?? "",
-        ingredients: (payload.ingredients ?? []).map(x => ({ text: (x.text || "").trim() })),
-        steps: (payload.steps ?? []).map(x => ({ text: (x.text || "").trim() })),
       });
-    } else {
-      await add(payload as any);
+      navigation.goBack();
+    } finally {
+      // small delay to let navigation occur before reenabling guard
+      setTimeout(() => { isSavingRef.current = false; }, 300);
     }
-    navigation.goBack();
   };
 
+  // row helpers
   const addRow = (kind: "i" | "s") => {
     kind === "i"
       ? setIngredients(prev => [...prev, { id: uid(), text: "" }])
@@ -201,13 +201,14 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
     else setSteps(prev => prev.map(x => x.id === id ? { ...x, text } : x));
   };
 
+  const removeRow = (kind: "i" | "s", id: string) => {
+    if (kind === "i") setIngredients(prev => prev.filter(x => x.id !== id));
+    else setSteps(prev => prev.filter(x => x.id !== id));
+  };
+
   return (
     <SafeAreaView style={s.container} edges={["bottom"]}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.select({ ios: "padding", android: "padding" })}
-        keyboardVerticalOffset={Platform.select({ ios: 0, android: 0 })}  // tweak if you have a custom header
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: "padding", android: "padding" })}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: 16, paddingBottom: Math.max(40, insets.bottom + 16) }}
@@ -224,7 +225,6 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
             placeholder="e.g., Chicken Curry"
             placeholderTextColor={colors.sub}
             style={s.input}
-            returnKeyType="next"
           />
 
           <Text style={s.label}>Type</Text>
@@ -257,15 +257,20 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
 
           <Text style={s.label}>Ingredients</Text>
           {ingredients.map((i, idx) => (
-            <TextInput
-              key={i.id}
-              value={i.text}
-              onChangeText={(t) => setRow("i", i.id, t)}
-              placeholder={`Ingredient ${idx + 1}`}
-              placeholderTextColor={colors.sub}
-              style={s.input}
-              returnKeyType="next"
-            />
+            <View key={i.id} style={s.rowInput}>
+              <TextInput
+                value={i.text}
+                onChangeText={(t) => setRow("i", i.id, t)}
+                placeholder={`Ingredient ${idx + 1}`}
+                placeholderTextColor={colors.sub}
+                style={[s.input, { flex: 1 }]}
+              />
+              {idx > 0 && (
+                <TouchableOpacity onPress={() => removeRow("i", i.id)} style={s.removeBtn}>
+                  <Text style={s.removeBtnTxt}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ))}
           <TouchableOpacity onPress={() => addRow("i")} style={s.addRow}>
             <Text style={s.addRowTxt}>+ Add ingredient</Text>
@@ -273,15 +278,20 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
 
           <Text style={s.label}>Steps</Text>
           {steps.map((st, idx) => (
-            <TextInput
-              key={st.id}
-              value={st.text}
-              onChangeText={(t) => setRow("s", st.id, t)}
-              placeholder={`Step ${idx + 1}`}
-              placeholderTextColor={colors.sub}
-              style={s.input}
-              returnKeyType="done"
-            />
+            <View key={st.id} style={s.rowInput}>
+              <TextInput
+                value={st.text}
+                onChangeText={(t) => setRow("s", st.id, t)}
+                placeholder={`Step ${idx + 1}`}
+                placeholderTextColor={colors.sub}
+                style={[s.input, { flex: 1 }]}
+              />
+              {idx > 0 && (
+                <TouchableOpacity onPress={() => removeRow("s", st.id)} style={s.removeBtn}>
+                  <Text style={s.removeBtnTxt}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ))}
           <TouchableOpacity onPress={() => addRow("s")} style={s.addRow}>
             <Text style={s.addRowTxt}>+ Add step</Text>
@@ -298,14 +308,10 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
           <View style={s.sheet}>
             <View style={s.sheetHandle} />
             <Text style={s.sheetTitle}>Choose Photo</Text>
-            <TouchableOpacity
-              style={s.sheetBtn}
-              onPress={async () => { setShowMediaSheet(false); await takePhoto(); }}>
+            <TouchableOpacity style={s.sheetBtn} onPress={async () => { setShowMediaSheet(false); await takePhoto(); }}>
               <Text style={s.sheetBtnTxt}>Take Photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={s.sheetBtn}
-              onPress={async () => { setShowMediaSheet(false); await pickFromGallery(); }}>
+            <TouchableOpacity style={s.sheetBtn} onPress={async () => { setShowMediaSheet(false); await pickFromGallery(); }}>
               <Text style={s.sheetBtnTxt}>Pick from Gallery</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.sheetBtn, s.sheetCancel]} onPress={() => setShowMediaSheet(false)}>
@@ -344,6 +350,7 @@ const s = StyleSheet.create({
   title: { color: colors.text, fontSize: 22, fontWeight: "700", marginBottom: 12 },
   label: { color: colors.sub, marginTop: 10, marginBottom: 6 },
   input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, color: colors.text, padding: 12, borderRadius: 12 },
+  rowInput: { flexDirection: "row", alignItems: "center", marginBottom: 6, gap: 6 },
 
   chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, alignSelf: "flex-start" },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
