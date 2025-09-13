@@ -5,6 +5,7 @@ import { Recipe } from "../type";
 import { colors } from "../theme";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+
 type Props = NativeStackScreenProps<any, "Detail">;
 
 export default function RecipeDetailScreen({ route, navigation }: Props) {

@@ -6,9 +6,10 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import types from "../data/recipeTypes.json";
 import { add, get, update } from "../storage/recipeStore";
-import { Ingredient, Recipe, Step } from "../type"; // <-- ensure this path
+import { Ingredient, Recipe, Step } from "../type";
 import { colors } from "../theme";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { usePreventRemove } from "@react-navigation/native";
 import {
   launchImageLibrary, launchCamera,
   ImageLibraryOptions, CameraOptions
@@ -37,7 +38,7 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
   // leave-guard
   const initialSnapshotRef = useRef<string>("");
   const pendingNavActionRef = useRef<any>(null);
-  const isSavingRef = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // load data
   useEffect(() => {
@@ -55,12 +56,11 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
             name: r.name,
             type: r.type,
             imageUrl: r.imageUrl ?? "",
-            ingredients: r.ingredients.map(x => ({ text: (x.text || "").trim() })),
-            steps: r.steps.map(x => ({ text: (x.text || "").trim() })),
+            ingredients: r.ingredients.map(x => ({ text: (x.text || "").trim() })).filter(x => x.text),
+            steps: r.steps.map(x => ({ text: (x.text || "").trim() })).filter(x => x.text),
           });
         }
       } else {
-        // pristine defaults for Add mode
         initialSnapshotRef.current = JSON.stringify({
           name: "",
           type: types[0],
@@ -122,13 +122,13 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
 
   const removeImage = () => setImageUrl("");
 
-  // --- dirty check (unified) ---
+  // --- dirty check (ignore blanks) ---
   const normalized = useMemo(() => ({
     name: name.trim(),
     type,
     imageUrl: imageUrl.trim(),
-    ingredients: ingredients.map(i => ({ text: (i.text || "").trim() })),
-    steps: steps.map(s => ({ text: (s.text || "").trim() })),
+    ingredients: ingredients.map(i => (i.text || "").trim()).filter(Boolean).map(text => ({ text })),
+    steps: steps.map(s => (s.text || "").trim()).filter(Boolean).map(text => ({ text })),
   }), [name, type, imageUrl, ingredients, steps]);
 
   const isDirty = useMemo(
@@ -137,16 +137,19 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
   );
 
   // --- intercept leaving ---
+  const prevent = isDirty && !isSaving;
+  usePreventRemove(prevent, (e) => {
+    if (isSaving) return;
+    pendingNavActionRef.current = e.data.action;
+    setShowDiscardSheet(true);
+  });
+
   useEffect(() => {
-    const unsub = navigation.addListener("beforeRemove", (e: any) => {
-      // allow if not dirty or we're programmatically navigating after a save
-      if (!isDirty || isSavingRef.current) return;
-      e.preventDefault();
-      pendingNavActionRef.current = e.data.action;
-      setShowDiscardSheet(true);
+    navigation.setOptions({
+      headerBackButtonMenuEnabled: false,
+      gestureEnabled: !prevent,
     });
-    return unsub;
-  }, [navigation, isDirty]);
+  }, [navigation, prevent]);
 
   const confirmDiscard = () => {
     setShowDiscardSheet(false);
@@ -166,26 +169,26 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
       name: normalized.name,
       type: normalized.type,
       imageUrl: normalized.imageUrl || undefined,
-      ingredients: normalized.ingredients.filter(i => i.text.length > 0),
-      steps: normalized.steps.filter(s => s.text.length > 0),
+      ingredients: normalized.ingredients,
+      steps: normalized.steps,
     };
 
-    isSavingRef.current = true;
+    setIsSaving(true);
+    await new Promise(res => setTimeout(res, 0)); // let prevent flip to false
+
     try {
       if (editingId) {
         await update(editingId, payload as Partial<Recipe>);
       } else {
         await add(payload as any);
       }
-      // refresh snapshot so guard sees no changes
       initialSnapshotRef.current = JSON.stringify({
         ...payload,
         imageUrl: payload.imageUrl ?? "",
       });
       navigation.goBack();
     } finally {
-      // small delay to let navigation occur before reenabling guard
-      setTimeout(() => { isSavingRef.current = false; }, 300);
+      setTimeout(() => setIsSaving(false), 300);
     }
   };
 
@@ -219,13 +222,7 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
           <Text style={s.title}>{editingId ? "Edit" : "Add"} Recipe</Text>
 
           <Text style={s.label}>Name</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Chicken Curry"
-            placeholderTextColor={colors.sub}
-            style={s.input}
-          />
+          <TextInput value={name} onChangeText={setName} placeholder="e.g., Chicken Curry" placeholderTextColor={colors.sub} style={s.input} />
 
           <Text style={s.label}>Type</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
@@ -370,6 +367,9 @@ const s = StyleSheet.create({
   addRowTxt: { color: colors.primary, fontWeight: "700" },
   submit: { marginTop: 18, backgroundColor: colors.primary, padding: 14, borderRadius: 14, alignItems: "center" },
   submitTxt: { color: "#06110a", fontWeight: "800" },
+
+  removeBtn: { backgroundColor: colors.danger, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  removeBtnTxt: { color: "#06110a", fontWeight: "800" },
 
   // bottom sheets
   backdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)" },
