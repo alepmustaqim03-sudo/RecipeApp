@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity,
-  Image, Platform, Modal, Pressable, KeyboardAvoidingView
+  Image, Platform, Modal, Pressable, KeyboardAvoidingView,Alert
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import types from "../data/recipeTypes.json";
@@ -164,13 +164,28 @@ export default function RecipeFormScreen({ route, navigation }: Props) {
 
   // --- submit ---
   const submit = async () => {
-    if (!name.trim()) return;
+    const cleanedIngredients = normalized.ingredients.filter(i => i.text.length > 0);
+    const cleanedSteps = normalized.steps.filter(s => s.text.length > 0);
+
+    if (!name.trim()) {
+      alert("Recipe name is required.");
+      return;
+    }
+    if (cleanedIngredients.length === 0) {
+      alert("At least 1 ingredient is required.");
+      return;
+    }
+    if (cleanedSteps.length === 0) {
+      alert("At least 1 step is required.");
+      return;
+    }
+
     const payload = {
       name: normalized.name,
       type: normalized.type,
       imageUrl: normalized.imageUrl || undefined,
-      ingredients: normalized.ingredients,
-      steps: normalized.steps,
+      ingredients: cleanedIngredients,
+      steps: cleanedSteps,
     };
 
     setIsSaving(true);

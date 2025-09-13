@@ -6,7 +6,13 @@ import { colors } from "../theme";
 export default function RecipeCard({ item, onPress }:{ item:Recipe; onPress:()=>void }) {
   return (
     <TouchableOpacity onPress={onPress} style={s.card}>
-      {item.imageUrl ? <Image source={{uri:item.imageUrl}} style={s.img}/> : <View style={[s.img, s.placeholder]}/>}
+      {item.imageUrl ? <Image
+  source={{ uri: item.imageUrl }}
+  style={s.img}
+  onError={(e) => console.log("IMAGE ERROR", e.nativeEvent)}
+  onLoadStart={() => console.log("IMAGE start")}
+  onLoadEnd={() => console.log("IMAGE end")}
+/> : <View style={[s.img, s.placeholder]}/>}
       <View style={{flex:1}}>
         <Text style={s.name} numberOfLines={1}>{item.name}</Text>
         <Text style={s.type}>{item.type}</Text>
