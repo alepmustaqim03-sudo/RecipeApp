@@ -3,7 +3,7 @@
 A tiny offline recipe manager built with React Native.  
 Create, edit, and browse recipes with images, ingredients, and step-by-step directions.
 
-## ✨ Features
+## Features
 
 - Recipe list with type filter chips (All, Breakfast, Dessert, etc.)
 - Add/Edit recipe with:
@@ -19,7 +19,7 @@ Create, edit, and browse recipes with images, ingredients, and step-by-step dire
 
 ---
 
-## 📸 Screens
+## Screens
 
 
 | HomeScreen                                      | Detail                                                | Add/Edit                                               |
@@ -28,7 +28,7 @@ Create, edit, and browse recipes with images, ingredients, and step-by-step dire
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 - React Native (TypeScript)
 - React Navigation (native stack)
@@ -39,7 +39,7 @@ Create, edit, and browse recipes with images, ingredients, and step-by-step dire
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 0) Requirements
 
@@ -90,7 +90,7 @@ yarn android
 
 ---
 
-## 🔐 Permissions
+## Permissions
 
 We request camera and photo library access when the user chooses “Add Photo → Take Photo / Gallery”.
 
@@ -121,7 +121,7 @@ Add to `android/app/src/main/AndroidManifest.xml`:
 
 ---
 
-## 🧭 Running the App
+## Running the App
 
 - **Start Metro**: `yarn start`
 - **Run iOS**: `yarn ios`
@@ -131,7 +131,7 @@ Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidMani
 
 ---
 
-## 🗂️ Project Structure (relevant bits)
+## Project Structure (relevant bits)
 
 ```
 /src
@@ -151,7 +151,7 @@ Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidMani
 
 ---
 
-## 🧩 Key Screens
+## Key Screens
 
 ### RecipeListScreen
 
@@ -181,7 +181,7 @@ Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidMani
 
 ---
 
-## 💾 Storage (local)
+## Storage (local)
 
 `recipeStore.ts` (AsyncStorage) exports:
 
@@ -196,7 +196,7 @@ Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidMani
 
 ---
 
-## 🧪 Manual Test Checklist
+## Manual Test Checklist
 
 - [ ] Fresh install boots sample recipes
 - [ ] Filter chips work (All + each type)
@@ -216,7 +216,7 @@ Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidMani
 
 ---
 
-## 🐞 Troubleshooting
+## Troubleshooting
 
 ### iOS image from URL doesn’t show
 
@@ -247,7 +247,7 @@ can't find gem cocoapods (Gem::GemNotFoundException)
 
 ---
 
-## 🔧 Scripts
+## Scripts
 
 ```json
 {
@@ -263,13 +263,9 @@ can't find gem cocoapods (Gem::GemNotFoundException)
 
 ---
 
-## ✅ Notes / Tips
+## Notes / Tips
 
 - On **real iOS devices**, `localhost` is the phone, not your dev machine. Use your Mac’s LAN IP for any dev image/API URLs.
 - If you’re on Android 13+, you need `READ_MEDIA_IMAGES`; pre-13 uses `READ_EXTERNAL_STORAGE`.
 
 ---
-
-## 📄 License
-
-MIT (or your preferred license)
