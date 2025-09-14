@@ -1,97 +1,275 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# RecipeApp (React Native)
 
-# Getting Started
+A tiny offline recipe manager built with React Native.  
+Create, edit, and browse recipes with images, ingredients, and step-by-step directions.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## ✨ Features
 
-## Step 1: Start Metro
+- Recipe list with type filter chips (All, Breakfast, Dessert, etc.)
+- Add/Edit recipe with:
+  - Image picker (camera or gallery) + permission checks (iOS/Android)
+  - Discard-changes guard (fancy bottom sheet)
+  - Keyboard-safe layout (iOS/Android)
+  - Remove rows (ingredients/steps) with first row pinned
+- Detail screen with:
+  - Placeholder if no image
+  - “No ingredients/steps” empty states
+  - Fancy delete confirmation sheet
+- Local storage (AsyncStorage) with bootstrap sample data
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+---
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 📸 Screens
 
-```sh
-# Using npm
-npm start
 
-# OR using Yarn
-yarn start
+| HomeScreen                                      | Detail                                                | Add/Edit                                               |
+| ----------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| ![List](docs/images/Recipe_Book_HomeScreen.png) | ![Detail](docs/images/Recipe_Book_Recipe_Details.png) | ![Form](docs/images/Recipe_Book_Add_Edit_FullData.png) |
+
+---
+
+## 🧱 Tech Stack
+
+- React Native (TypeScript)
+- React Navigation (native stack)
+- AsyncStorage (via your `recipeStore`)
+- `react-native-image-picker`
+- `react-native-permissions`
+- `react-native-safe-area-context`
+
+---
+
+## 🚀 Getting Started
+
+### 0) Requirements
+
+- Node 18+ (LTS recommended)
+- Yarn or npm (examples use Yarn)
+- Xcode (for iOS)
+- Android Studio + SDK (for Android)
+- Ruby + CocoaPods (iOS only)
+  - If you use `rbenv`: `rbenv install 3.2.2` then `gem install cocoapods`
+
+### 1) Install deps
+
+```bash
+yarn
+# or: npm install
 ```
 
-## Step 2: Build and run your app
+### 2) iOS setup
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+```bash
+cd ios
+pod install
+cd ..
+```
 
-### Android
+If you see `can't find gem cocoapods`, install pods first:
 
-```sh
-# Using npm
-npm run android
+```bash
+gem install cocoapods
+pod --version
+```
 
-# OR using Yarn
+Then:
+
+```bash
+yarn ios
+# or: npx react-native run-ios
+```
+
+### 3) Android setup
+
+Start an emulator (or connect a device), then:
+
+```bash
 yarn android
+# or: npx react-native run-android
 ```
+
+---
+
+## 🔐 Permissions
+
+We request camera and photo library access when the user chooses “Add Photo → Take Photo / Gallery”.
 
 ### iOS
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Ensure `Info.plist` contains:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We use the camera to take a recipe photo.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>We use your photo library to choose a recipe photo.</string>
 ```
 
-Then, and every time you update your native dependencies, run:
+> Dev Only: If you ever load `http://` images, add ATS exceptions (not recommended for prod). For HTTPS you’re fine.
 
-```sh
-bundle exec pod install
+### Android
+
+Add to `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<!-- Android 13+ -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<!-- Pre-13 -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+---
 
-```sh
-# Using npm
-npm run ios
+## 🧭 Running the App
 
-# OR using Yarn
-yarn ios
+- **Start Metro**: `yarn start`
+- **Run iOS**: `yarn ios`
+- **Run Android**: `yarn android`
+
+Hot reload is enabled. If native changes are made (e.g., Info.plist, AndroidManifest), rebuild the app.
+
+---
+
+## 🗂️ Project Structure (relevant bits)
+
+```
+/src
+  /components
+    RecipeCard.tsx
+  /data
+    recipeTypes.json
+  /screens
+    RecipeListScreen.tsx
+    RecipeDetailScreen.tsx
+    RecipeFormScreen.tsx
+  /storage
+    recipeStore.ts   # get, getAll, add, update, remove, bootstrapIfEmpty
+  /theme.ts          # colors
+  /type.ts           # Recipe, Ingredient, Step types
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🧩 Key Screens
 
-## Step 3: Modify your app
+### RecipeListScreen
 
-Now that you have successfully run the app, let's make changes!
+- Shows chips (filter by type)
+- FlatList of recipes (card)
+- FAB to open Form (Add)
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+### RecipeFormScreen
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- Inputs: name, type chips, image picker
+- Dynamic rows for ingredients & steps
+- Remove row (✕) except first row
+- Bottom sheets:
+  - Media chooser (Take Photo / Pick from Gallery)
+  - Discard changes 
+- Validation on submit:
+  - Name required
+  - At least one ingredient
+  - At least one step
+- Success alert after create/update
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+### RecipeDetailScreen
 
-## Congratulations! :tada:
+- Renders image or placeholder
+- Renders ingredients/steps or empty text
+- Fancy delete confirmation modal
 
-You've successfully run and modified your React Native App. :partying_face:
+---
 
-### Now what?
+## 💾 Storage (local)
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+`recipeStore.ts` (AsyncStorage) exports:
 
-# Troubleshooting
+- `bootstrapIfEmpty()`: seeds samples on first run
+- `getAll()`: returns all recipes
+- `get(id)`
+- `add(recipe)`
+- `update(id, patch)`
+- `remove(id)`
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+> Keep IDs as strings. We use a simple `uid()` util in the form screen.
 
-# Learn More
+---
 
-To learn more about React Native, take a look at the following resources:
+## 🧪 Manual Test Checklist
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [ ] Fresh install boots sample recipes
+- [ ] Filter chips work (All + each type)
+- [ ] Add Recipe:
+  - [ ] Add image via camera (grant permission)
+  - [ ] Add image via gallery (grant permission)
+  - [ ] Validation: name/ingredient/step required
+  - [ ] Success alert appears and returns to list
+  - [ ] Discard sheet appears when you try to go back with unsaved changes
+- [ ] Edit Recipe:
+  - [ ] Change fields, Save, see changes on Detail/List
+  - [ ] Back with no change → no discard prompt
+- [ ] Detail:
+  - [ ] Shows placeholder when no image
+  - [ ] Shows empty text when no ingredients/steps
+  - [ ] Delete confirmation sheet works
+
+---
+
+## 🐞 Troubleshooting
+
+### iOS image from URL doesn’t show
+
+- Many stock/CDN sites (iStock/Getty) **block hotlinking** or return HTML → RN `<Image>` can’t decode.
+- Sanity check with:
+  ```tsx
+  <Image source={{ uri: "https://picsum.photos/800/600" }} ... />
+  ```
+- If using your own server, ensure `Content-Type: image/jpeg` and no auth needed.
+- If you _must_ use a blocked host, proxy it through your backend.
+
+### iOS: `Error decoding image data <NSData ...>`
+
+- Means response wasn’t a real image (likely HTML). Use a different URL or a proxy as above.
+
+### iOS: Cocoapods not found
+
+```
+can't find gem cocoapods (Gem::GemNotFoundException)
+```
+
+- Install pods: `gem install cocoapods`
+- Then run `cd ios && pod install`
+
+### Navigation: “screen removed natively” warning
+
+- We use `usePreventRemove` + `gestureEnabled: !prevent` and update the initial snapshot after successful save to avoid the discard sheet on submit.
+
+---
+
+## 🔧 Scripts
+
+```json
+{
+  "scripts": {
+    "start": "react-native start",
+    "ios": "react-native run-ios",
+    "android": "react-native run-android",
+    "clean:ios": "cd ios && xcodebuild -alltargets clean && cd ..",
+    "pods": "cd ios && pod install && cd .."
+  }
+}
+```
+
+---
+
+## ✅ Notes / Tips
+
+- On **real iOS devices**, `localhost` is the phone, not your dev machine. Use your Mac’s LAN IP for any dev image/API URLs.
+- If you’re on Android 13+, you need `READ_MEDIA_IMAGES`; pre-13 uses `READ_EXTERNAL_STORAGE`.
+
+---
+
+## 📄 License
+
+MIT (or your preferred license)
